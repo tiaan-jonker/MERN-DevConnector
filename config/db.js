@@ -7,9 +7,9 @@ const connectDB = async () => {
     await mongoose.connect(db, {
       useNewUrlParser: true,
     })
-    console.log('MongoDB connected')
+    // console.log('MongoDB connected')
   } catch (error) {
-    console.error('Database connection error in config: ', error.message)
+    // console.error('Database connection error in config: ', error.message)
     // Exit process when failure
     process.exit(1)
   }

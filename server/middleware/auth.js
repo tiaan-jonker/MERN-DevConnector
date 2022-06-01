@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken')
 const config = require('config')
 const req = require('express/lib/request')
 
-function checkJwtMiddleware(res, res, next) {
+function checkJwtMiddleware(req, res, next) {
   // Get token form header
   const token = req.header('x-auth-token')
 
@@ -18,7 +18,7 @@ function checkJwtMiddleware(res, res, next) {
     req.user = decoded.user
     next()
   } catch (error) {
-    // If not valid
+    // If not valid for example if 1 was added ot the token
     res.status(401).json({ msg: 'Token is not valid' })
   }
 }
