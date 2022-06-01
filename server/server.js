@@ -1,23 +1,26 @@
 const express = require('express')
-const connectDB = require('./config/db')
+const connectDB = require('../config/db')
 
 // Importing routes
-const usersRoute = require('./routes/api/users')
-const authRoute = require('./routes/api/auth')
-const profileRoute = require('./routes/api/profile')
-const postsRoute = require('./routes/api/posts')
+const usersRoute = require('./routes/api/v1/users')
+const authRoute = require('./routes/api/v1/auth')
+const profileRoute = require('./routes/api/v1/profile')
+const postsRoute = require('./routes/api/v1/posts')
 
 const server = express()
 
 // Database connection
 connectDB()
 
+// Init middleware
+server.use(express.json({ extended: false }))
+
 server.get('/', (req, res) => res.send('API running'))
 
 // Define routes
-server.use('/api/users', usersRoute)
-server.use('/api/auth', authRoute)
-server.use('/api/profile', profileRoute)
-server.use('/api/posts', postsRoute)
+server.use('/api/v1/users', usersRoute)
+server.use('/api/v1/auth', authRoute)
+server.use('/api/v1/profile', profileRoute)
+server.use('/api/v1/posts', postsRoute)
 
 module.exports = server
