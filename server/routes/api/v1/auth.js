@@ -7,12 +7,18 @@ const { check, validationResult } = require('express-validator')
 const auth = require('../../../middleware/auth')
 const User = require('../../../models/User')
 
-// @route   GET api/auth
+// @route   GET api/v1/auth
 // @desc    Test route
-// @access  Public
+// @access  Private
 router.get('/', auth, async (req, res) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    console.log({ errors: errors.array() })
+    return res.status(400).json({ errors: errors.array() })
+  }
+  
   try {
-    const user = await User.findById(req.user.id).select('-password')
+    const user = await User.findById(req.user.id).select('password')
     res.json(user)
   } catch (error) {
     console.error('Could not be authorized')

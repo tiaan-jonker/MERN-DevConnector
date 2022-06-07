@@ -5,10 +5,13 @@ const { check, validationResult } = require('express-validator')
 const Profile = require('../../../models/Profile')
 const User = require('../../../models/User')
 
-// @route   GET api/v1/profile/myprofile
+// @BASE ROUTE api/v1/profile
+//@req.user.id from generated token
+
+// @route   GET api/v1/profile/me
 // @desc    Get current users profile
 // @access  Private
-router.get('/me', async (req, res) => {
+router.get('/me', auth, async (req, res) => {
   try {
     const profile = await Profile.findOne({
       user: req.user.id,
@@ -52,11 +55,6 @@ router.post(
       instagram,
       linkedin,
       facebook,
-      company,
-      location,
-      bio,
-      status,
-      githubusername,
       // spread the rest of the fields we don't need to check
       ...rest
     } = req.body
@@ -104,7 +102,7 @@ router.post(
 
       res.json(profile)
     } catch (error) {
-      console.error('Server error in users: ', error.message)
+      console.error('Server error in profile: ', error.message)
       res.status(500).send('Server error 500')
     }
   }
@@ -116,11 +114,15 @@ router.post(
 router.get('/', async (req, res) => {
   const { user_id } = req.params
   try {
-    const profiles = await Profile.find().populate('user', ['name', 'avatar'])
+    const profiles = await Profile.find().populate('user', [
+      'name',
+      'avatar',
+      'email',
+    ])
 
     res.json(profiles)
   } catch (error) {
-    console.error('Server error in users: ', error.message)
+    console.error('Server error in profile: ', error.message)
     res.status(500).send('Server error 500')
   }
 })
@@ -142,7 +144,7 @@ router.get('/user/:user_id', async (req, res) => {
 
     res.json(profile)
   } catch (error) {
-    console.error('Server error in users: ', error.message)
+    console.error('Server error in profile: ', error.message)
     if (error.kind === 'ObjectId') {
       return res.status(400).json({ msg: 'Profile not found' })
     }
@@ -164,9 +166,83 @@ router.delete('/', auth, async (req, res) => {
 
     res.json({ msg: 'User deleted' })
   } catch (error) {
-    console.error('Server error in users: ', error.message)
+    console.error('Server error in profile: ', error.message)
     res.status(500).send('Server error 500')
   }
 })
+
+// @route   PUT api/v1/profile/experience
+// @desc    Add profile experience
+// @access  Private
+router.put(
+  '/experience',
+  [
+    auth,
+    [
+      check('title', 'Title is required').notEmpty(),
+      check('company', 'Company is required').notEmpty(),
+      check('from', 'From date is required').notEmpty(),
+    ],
+  ],
+  async (req, res) => {
+    const { id } = req.user
+
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      console.log({ errors: errors.array() })
+      return res.status(400).json({ errors: errors.array() })
+    }
+
+    const { title, company, location, from, to, current, description } =
+      req.body
+
+    const newExp = {
+      title,
+      company,
+      location,
+      from,
+      to,
+      current,
+      description,
+    }
+
+    try {
+      const profile = await Profile.findOne({ user: id })
+      profile.experience.unshift(newExp)
+      await profile.save()
+
+      res.json(profile)
+    } catch (error) {
+      console.error('Server error in profile: ', error.message)
+      res.status(500).send('Server error 500')
+    }
+  }
+)
+
+// @route   DELETE api/v1/profile/experience/:exp_id
+// @desc    Delete experience from profile
+// @access  Private
+router.delete('/experience/:exp_id', auth, async (req, res) => {
+  const { id } = req.user
+  const { exp_id } = req.params
+  try {
+    const profile = await Profile.findOne({ user: id })
+
+    // Get remove index
+    const removeIndex = profile.experience
+      .map((item) => item.id)
+      .indexOf(exp_id)
+
+    profile.experience.splice(removeIndex, 1)
+
+    await profile.save()
+
+    res.json(profile)
+  } catch (error) {
+    console.error('Server error in profile: ', error.message)
+    res.status(500).send('Server error 500')
+  }
+})
+
 
 module.exports = router
